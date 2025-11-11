@@ -44,16 +44,16 @@ struct ImageAssetIdentifier {
     let assetName: String
 
     /**
-     Root directory where this asset lives
+     Root directory which this asset lives, relative to the project path
      */
-    let assetDirectory: URL
+    let relativeProjectAssetDirectoryPath: String
 
     /**
      A virtual path which uniquely identifies an asset on the system
      across all variants.
      */
     var virtualPath: String {
-        return assetDirectory.appendingPathComponent(assetName).path
+        return "\(relativeProjectAssetDirectoryPath)/\(assetName)"
     }
 }
 

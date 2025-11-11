@@ -8,7 +8,7 @@
 import Foundation
 
 struct AssetCatalogEntry {
-    let assetDirectory: URL
+    let projectRelativeDirectoryPath: String
     let virtualPath: String
     let image: ImageAsset?
     let font: FontAsset?
@@ -29,7 +29,7 @@ class GenerateAssetCatalogProcessor: CompilationProcessor {
     private let fileManager: ValdiFileManager
     private let projectConfig: ValdiProjectConfig
     private let targetSizeForPreview = 30
-    private let previousAssets = Synchronized<[URL: [AssetCatalogEntry]]>(data: [:])
+    private let previousAssets = Synchronized<[String: [AssetCatalogEntry]]>(data: [:])
     private let enablePreviewInGeneratedTSFile: Bool
 
     init(logger: ILogger, fileManager: ValdiFileManager, projectConfig: ValdiProjectConfig, enablePreviewInGeneratedTSFile: Bool) {
@@ -160,7 +160,7 @@ class GenerateAssetCatalogProcessor: CompilationProcessor {
         return try module.build()
     }
 
-    private func resolveAssets(key: URL, inputAssets: [AssetCatalogEntry]) -> [AssetCatalogEntry] {
+    private func resolveAssets(key: String, inputAssets: [AssetCatalogEntry]) -> [AssetCatalogEntry] {
         var allAssets: [AssetCatalogEntry]
 
         if let previousAssets = self.previousAssets.data({ (previousAssets) -> [AssetCatalogEntry]? in
@@ -183,16 +183,14 @@ class GenerateAssetCatalogProcessor: CompilationProcessor {
         return allAssets.sorted(by: { (left, right) in left.virtualPath < right.virtualPath })
     }
 
-    private func generateAssetCatalog(assetsInBundle: GroupedItems<URL, SelectedItem<AssetCatalogEntry>>) -> [CompilationItem] {
-        let assetsDirectory = assetsInBundle.key
-        let assets = resolveAssets(key: assetsDirectory, inputAssets: assetsInBundle.items.map { $0.data })
+    private func generateAssetCatalog(assetsInBundle: GroupedItems<String, SelectedItem<AssetCatalogEntry>>) -> [CompilationItem] {
+        let assetDirectoryPath = assetsInBundle.key
+        let assets = resolveAssets(key: assetDirectoryPath, inputAssets: assetsInBundle.items.map { $0.data })
 
         var outItems = assetsInBundle.items.map { $0.item }
         let anyItem = outItems[0]
 
         do {
-            let assetDirectoryPath = anyItem.bundleInfo.relativeProjectPath(forItemURL: assetsDirectory)
-
             let tsModule = generateTypeScriptModule(relativeAssetDirectoryPath: assetDirectoryPath, assets: assets)
             let tsModuleData = try tsModule.utf8Data()
 
@@ -231,14 +229,14 @@ class GenerateAssetCatalogProcessor: CompilationProcessor {
     func process(items: CompilationItems) throws -> CompilationItems {
         return items.select { (item) -> AssetCatalogEntry? in
             if case .imageAsset(let asset) = item.kind {
-                return AssetCatalogEntry(assetDirectory: asset.identifier.assetDirectory, virtualPath: asset.identifier.virtualPath, image: asset, font: nil)
+                return AssetCatalogEntry(projectRelativeDirectoryPath: asset.identifier.relativeProjectAssetDirectoryPath, virtualPath: asset.identifier.virtualPath, image: asset, font: nil)
             }
             if case .resourceDocument(let document) = item.kind, document.outputFilename.hasAnyExtension(FileExtensions.fonts) {
-                return AssetCatalogEntry(assetDirectory: item.sourceURL.deletingLastPathComponent(), virtualPath: item.relativeProjectPath, image: nil, font: FontAsset(name: document.outputFilename.deletingPathExtension(), data: document.file))
+                return AssetCatalogEntry(projectRelativeDirectoryPath: item.relativeProjectPath.deletingLastPathComponent(), virtualPath: item.relativeProjectPath, image: nil, font: FontAsset(name: document.outputFilename.deletingPathExtension(), data: document.file))
             }
             return nil
-        }.groupBy { (item) -> URL in
-            return item.data.assetDirectory
+        }.groupBy { (item) -> String in
+            return item.data.projectRelativeDirectoryPath
         }.transformEachConcurrently(generateAssetCatalog)
     }
 

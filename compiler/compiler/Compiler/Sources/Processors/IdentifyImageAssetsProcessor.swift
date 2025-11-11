@@ -72,7 +72,7 @@ class IdentifyImageAssetsProcessor: CompilationProcessor {
 
     private func identifyImage(item: CompilationItem, imageURL: URL) -> Promise<IdentifiedImage> {
         do {
-            let variant = try ImageVariantResolver.resolveVariant(imageURL: imageURL)
+            let variant = try ImageVariantResolver.resolveVariant(imageURL: imageURL, relativeProjectPath: item.relativeProjectPath)
 
             let assetName = variant.assetIdentifier.assetName
 

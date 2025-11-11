@@ -40,7 +40,7 @@ class ImageVariantSpecs {
         self.matchRegex = try! NSRegularExpression(pattern: regexStr.replacingOccurrences(of: "/", with: "\\/"))
     }
 
-    func matches(fileURL: URL) -> ImageAssetIdentifier? {
+    func matches(fileURL: URL, relativeProjectPath: String) -> ImageAssetIdentifier? {
         let filePath = fileURL.path
 
         guard let textResult = fileURL.path.getMatch(regex: matchRegex) else {
@@ -54,9 +54,9 @@ class ImageVariantSpecs {
         }
 
         let assetName = fileName.replacingOccurrences(of: "-", with: "_")
-        let assetDirectory = (0..<self.componentsCount).reduce(fileURL, { url, _ in url.deletingLastPathComponent() })
+        let relativeProjectAssetDirectoryPath = (0..<self.componentsCount).reduce(relativeProjectPath, { path, _ in path.deletingLastPathComponent() })
 
-        return ImageAssetIdentifier(assetName: assetName, assetDirectory: assetDirectory)
+        return ImageAssetIdentifier(assetName: assetName, relativeProjectAssetDirectoryPath: relativeProjectAssetDirectoryPath)
     }
 
     func resolveFilename(assetName: String) -> String {

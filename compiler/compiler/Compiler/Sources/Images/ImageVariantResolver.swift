@@ -36,9 +36,9 @@ class ImageVariantResolver {
     static let allExportedVariantSpecs = iosVariantSpecs + androidVariantSpecs + webVariantSpecs
     static let allSupportedVariantSpecs = allExportedVariantSpecs + [svgVariantSpecs]
 
-    static func resolveVariant(imageURL: URL) throws -> ResolvedImageVariant {
+    static func resolveVariant(imageURL: URL, relativeProjectPath: String) throws -> ResolvedImageVariant {
         for variant in allSupportedVariantSpecs {
-            if let assetIdentifier = variant.matches(fileURL: imageURL) {
+            if let assetIdentifier = variant.matches(fileURL: imageURL, relativeProjectPath: relativeProjectPath) {
                 return ResolvedImageVariant(variant: variant, assetIdentifier: assetIdentifier)
             }
         }
