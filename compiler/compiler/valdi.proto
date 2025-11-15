@@ -52,7 +52,6 @@ message DownloadableModuleAssets {
   // Android xxxhdpi: 4
   double device_density = 3;
 }
-
 // Manifest stored in a .valdimodule when the module
 // is downloadable. Contains all the dependencies and all
 // the urls in which the artifact can be downloaded from.
